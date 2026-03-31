@@ -1,0 +1,6 @@
+env 
+dist
+node_modules
+tavily-search-1.0.0.zip
+
+.dev
