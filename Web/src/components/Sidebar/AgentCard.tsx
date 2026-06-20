@@ -29,8 +29,8 @@ export function AgentCard({
               {agent.name || "Untitled Agent"}
             </h3>
             {podName && (
-               <div className="flex items-center gap-1 mt-1 opacity-70">
-                  <span className="text-[9px] font-bold text-[#FF4A00] uppercase tracking-widest">{podName}</span>
+               <div className="flex items-center gap-1 mt-1 opacity-50 group-hover:opacity-100 transition-opacity">
+                  <span className="text-[9px] font-bold text-[#A1A1AA] group-hover:text-[#FF4A00] uppercase tracking-widest">{podName}</span>
                </div>
             )}
           </div>
@@ -89,9 +89,9 @@ export function AgentCard({
         <div className="flex items-center gap-3">
            <button 
              onClick={(e) => { e.stopPropagation(); onAssignTask(agent); }}
-             className="h-8 px-4 flex items-center justify-center gap-2 rounded-lg border border-[#FF4A00]/20 bg-[#FF4A00]/10 text-[#FF4A00] hover:bg-[#FF4A00]/20 transition-colors shadow-lg shadow-[#FF4A00]/10 text-[11px] font-bold tracking-wide"
+             className="h-8 px-4 flex items-center justify-center gap-2 rounded-lg border border-[#18181B] bg-[#000] text-[#52525B] hover:bg-[#FF4A00] hover:text-white hover:border-[#FF4A00] transition-all text-[11px] font-bold tracking-wide shadow-sm hover:shadow-[0_0_15px_rgba(255,74,0,0.3)]"
            >
-             <Play className="h-3.5 w-3.5 fill-current" /> Initialize Run
+             <Play className="h-3 w-3 fill-current" /> Initialize Run
            </button>
         </div>
 

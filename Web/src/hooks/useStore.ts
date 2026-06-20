@@ -10,31 +10,32 @@ const MOCK_KB: KnowledgeBase[] = [
 
 const MOCK_AGENTS: Agent[] = [
   {
-    id: 'agent-1', name: 'Research Assistant', description: 'Specializes in deep research and data synthesis.',
-    instruction: 'Identify key trends in the provided data and summarize them.',
+    id: 'agent-1', name: 'Vanguard Alpha', description: 'Lead intelligence and coordination unit.',
+    instruction: 'You are the mission lead. Coordinate all team efforts and ensure overall goal completion.',
     tools: ['curl', 'search'], mcpTools: [], knowledgeBases: ['internal-docs'],
-    triggers: [{ id: 't1', type: 'cron', config: { schedule: '0 9 * * *' } }],
+    triggers: [{ id: 't1', type: 'webhook', config: { path: '/trigger-vanguard' } }],
     model: 'gpt-4o', temperature: 0.7, maxIterations: 10, runningInstances: 2, colorClass: 'agent-blue'
   },
   {
-    id: 'agent-2', name: 'Customer Support', description: 'Handles common customer inquiries.',
-    instruction: 'Be polite and helpful when answering customer questions.',
-    tools: ['send_email'], mcpTools: [], knowledgeBases: ['website-crawler'],
-    triggers: [{ id: 't2', type: 'webhook', config: { path: '/support' } }],
-    model: 'claude-3-5-sonnet', temperature: 0.3, maxIterations: 5, runningInstances: 0, colorClass: 'agent-emerald'
+    id: 'agent-2', name: 'Sentry S-101', description: 'Autonomous health and security monitor.',
+    instruction: 'Monitor the system status and security logs. Alert only on critical failures.',
+    tools: ['curl'], mcpTools: [], knowledgeBases: [],
+    triggers: [{ id: 't2', type: 'cron', config: { schedule: '*/5 * * * *' } }],
+    model: 'claude-3-5-sonnet', temperature: 0.3, maxIterations: 5, runningInstances: 1, colorClass: 'agent-emerald'
   },
   {
-    id: 'agent-3', name: 'Project Manager', description: 'Tracks project progress and deadlines.',
-    instruction: 'Update the project board based on team updates.',
-    tools: ['create_issue', 'read_issue'], mcpTools: [], knowledgeBases: ['notion-workspace'],
-    triggers: [{ id: 't3', type: 'notion', config: { event: 'Page Created' } }],
-    model: 'gpt-4o', temperature: 0.5, maxIterations: 8, runningInstances: 1, colorClass: 'agent-purple'
+    id: 'agent-3', name: 'Operative Shadow', description: 'Specialized deep-research specialist.',
+    instruction: 'Perform comprehensive web research and competitor analysis when summoned by a mission.',
+    tools: ['search'], mcpTools: [], knowledgeBases: [],
+    triggers: [],
+    model: 'gpt-4o', temperature: 0.5, maxIterations: 8, runningInstances: 0, colorClass: 'agent-purple'
   },
   {
-    id: 'agent-4', name: 'Security Auditor', description: 'Scans for vulnerabilities and checks permissions.',
-    instruction: 'Identify potential security risks in the provided context.',
-    tools: ['curl'], mcpTools: [], knowledgeBases: ['internal-docs'],
-    triggers: [], model: 'gpt-4o', temperature: 0.1, maxIterations: 12, runningInstances: 0, colorClass: 'agent-rose'
+    id: 'agent-4', name: 'Reserve R-404', description: 'Tactical intelligence reserve unit.',
+    instruction: 'Ready for assignment to specific missions or autonomous duty cycles.',
+    tools: ['search'], mcpTools: [], knowledgeBases: [],
+    triggers: [],
+    model: 'gpt-4o', temperature: 0.1, maxIterations: 12, runningInstances: 0, colorClass: 'agent-rose'
   },
   {
     id: 'agent-5', name: 'Content Strategist', description: 'Drafts vision and communications copy.',
@@ -73,7 +74,7 @@ const MOCK_PODS: Pod[] = [
     id: 'pod-1',
     name: 'Market Research Team',
     goal: 'Research competitor products, gather customer feedback, and create actionable tickets in the project board. The research agent gathers data, support agent provides customer insights, and the PM creates tickets.',
-    agentIds: ['agent-1', 'agent-2', 'agent-3'],
+    agentIds: ['agent-1', 'agent-3'],
     routingMode: 'coordinated',
     maxRounds: 10,
     timeoutSeconds: 300,
@@ -84,7 +85,7 @@ const MOCK_PODS: Pod[] = [
     id: 'pod-2',
     name: 'Tactical Response Unit',
     goal: 'Quickly identify and patch security vulnerabilities in the core platform. Auditor finds bugs, Architect designs fix, DevOps deploys.',
-    agentIds: ['agent-4', 'agent-6', 'agent-9'],
+    agentIds: ['agent-6', 'agent-9'],
     routingMode: 'pipeline',
     maxRounds: 10,
     timeoutSeconds: 300,
@@ -95,7 +96,7 @@ const MOCK_PODS: Pod[] = [
     id: 'pod-3',
     name: 'Global Hive',
     goal: 'End-to-end product development: Strategist drafts vision, Researcher validates, Data Scientist models impact, Architect builds, Auditor secures, and DevOps scales.',
-    agentIds: ['agent-5', 'agent-7', 'agent-8', 'agent-6', 'agent-4', 'agent-9'],
+    agentIds: ['agent-5', 'agent-7', 'agent-8', 'agent-6', 'agent-9'],
     routingMode: 'swarm',
     maxRounds: 25,
     timeoutSeconds: 900,
@@ -118,21 +119,21 @@ const MOCK_SESSIONS: Session[] = [
     toolsUsed: ['search', 'curl', 'create_issue'],
     timestamp: new Date(Date.now() - 7200000).toISOString(),
     logs: [
-       '[Research Assistant] Starting data aggregation from internal docs...',
-       '[Research Assistant] Found 12 relevant competitor pages.',
-       '[Research Assistant → Customer Support] Requesting customer feedback summary.',
-       '[Customer Support] Analyzing top 5 user pain points from recent tickets.',
-       '[Customer Support → Research Assistant] Returning feedback analysis.',
-       '[Research Assistant → Project Manager] Sending combined research + feedback report.',
-       '[Project Manager] Creating 3 tickets in Notion based on findings.',
-       '[System] Mission completed in 8 rounds. 3 deliverables created.'
+      '[Research Assistant] Starting data aggregation from internal docs...',
+      '[Research Assistant] Found 12 relevant competitor pages.',
+      '[Research Assistant → Customer Support] Requesting customer feedback summary.',
+      '[Customer Support] Analyzing top 5 user pain points from recent tickets.',
+      '[Customer Support → Research Assistant] Returning feedback analysis.',
+      '[Research Assistant → Project Manager] Sending combined research + feedback report.',
+      '[Project Manager] Creating 3 tickets in Notion based on findings.',
+      '[System] Mission completed in 8 rounds. 3 deliverables created.'
     ],
     result: { summary: 'Completed market research with 3 actionable tickets created.' },
     executionDetails: 'Runtime: 12.5s', status: 'completed',
     events: [
-       { from: 'agent-1', to: 'agent-2', type: 'call', timestamp: new Date().toISOString(), label: 'Request Feedback' },
-       { from: 'agent-2', to: 'agent-1', type: 'response', timestamp: new Date().toISOString(), label: 'Return Analysis' },
-       { from: 'agent-1', to: 'agent-3', type: 'call', timestamp: new Date().toISOString(), label: 'Send Report' }
+      { from: 'agent-1', to: 'agent-2', type: 'call', timestamp: new Date().toISOString(), label: 'Request Feedback' },
+      { from: 'agent-2', to: 'agent-1', type: 'response', timestamp: new Date().toISOString(), label: 'Return Analysis' },
+      { from: 'agent-1', to: 'agent-3', type: 'call', timestamp: new Date().toISOString(), label: 'Send Report' }
     ]
   },
   {
@@ -140,15 +141,15 @@ const MOCK_SESSIONS: Session[] = [
     toolsUsed: ['search'],
     timestamp: new Date(Date.now() - 1800000).toISOString(),
     logs: [
-       '[Research Assistant] Quick scan of latest industry news.',
-       '[Research Assistant → Project Manager] No major changes. Summary update only.',
-       '[Project Manager] Updated existing tickets with latest data.',
-       '[System] Mission completed in 3 rounds.'
+      '[Research Assistant] Quick scan of latest industry news.',
+      '[Research Assistant → Project Manager] No major changes. Summary update only.',
+      '[Project Manager] Updated existing tickets with latest data.',
+      '[System] Mission completed in 3 rounds.'
     ],
     result: { summary: 'Incremental update — no new tickets needed.' },
     executionDetails: 'Runtime: 4.1s', status: 'completed',
     events: [
-       { from: 'agent-1', to: 'agent-3', type: 'call', timestamp: new Date().toISOString(), label: 'Update Report' }
+      { from: 'agent-1', to: 'agent-3', type: 'call', timestamp: new Date().toISOString(), label: 'Update Report' }
     ]
   },
   {
@@ -156,34 +157,34 @@ const MOCK_SESSIONS: Session[] = [
     toolsUsed: ['search', 'notion', 'curl'],
     timestamp: new Date().toISOString(),
     logs: [
-       '[Content Strategist] Starting swarm orchestration for Global v2.0 roadmap.',
-       '[Content Strategist → UX Researcher] Requesting user pain point matrix.',
-       '[Content Strategist → Data Scientist] Requesting performance baseline projection.',
-       '[UX Researcher] Identified top 3 friction points in session recordings.',
-       '[Data Scientist] Calculated 40% potential throughput gain in v2.0.',
-       '[Backend Architect] Drafting secure API endpoints based on new scale requirements...',
-       '[Backend Architect → Security Auditor] Requesting audit of draft schemas.',
-       '[Security Auditor] Flagged potential injection vector in endpoint A-12.',
-       '[Security Auditor → Backend Architect] Returning audit results (Vulnerable).',
-       '[Backend Architect] Patching endpoint A-12 and refining SQL abstraction.',
-       '[Backend Architect → Security Auditor] Requesting re-audit of patched schema.',
-       '[Security Auditor] Patch verified. No and further risks detected.',
-       '[DevOps Engineer] Provisioning auto-scaling staging infrastructure...',
-       '[Content Strategist] Hive swarm successfully settled. All v2.0 deliverables are verified and staged.',
-       '[System] Complex hive swarm mission completed in 16 rounds of active collaboration.'
+      '[Content Strategist] Starting swarm orchestration for Global v2.0 roadmap.',
+      '[Content Strategist → UX Researcher] Requesting user pain point matrix.',
+      '[Content Strategist → Data Scientist] Requesting performance baseline projection.',
+      '[UX Researcher] Identified top 3 friction points in session recordings.',
+      '[Data Scientist] Calculated 40% potential throughput gain in v2.0.',
+      '[Backend Architect] Drafting secure API endpoints based on new scale requirements...',
+      '[Backend Architect → Security Auditor] Requesting audit of draft schemas.',
+      '[Security Auditor] Flagged potential injection vector in endpoint A-12.',
+      '[Security Auditor → Backend Architect] Returning audit results (Vulnerable).',
+      '[Backend Architect] Patching endpoint A-12 and refining SQL abstraction.',
+      '[Backend Architect → Security Auditor] Requesting re-audit of patched schema.',
+      '[Security Auditor] Patch verified. No and further risks detected.',
+      '[DevOps Engineer] Provisioning auto-scaling staging infrastructure...',
+      '[Content Strategist] Hive swarm successfully settled. All v2.0 deliverables are verified and staged.',
+      '[System] Complex hive swarm mission completed in 16 rounds of active collaboration.'
     ],
     result: { summary: 'Global Hive v2.0 staging successfully provisioned with verified security architecture.' },
     executionDetails: 'Runtime: 52.8s', status: 'completed',
     events: [
-       { from: 'agent-5', to: 'agent-7', type: 'call', timestamp: new Date().toISOString(), label: 'Request Matrix' },
-       { from: 'agent-5', to: 'agent-8', type: 'call', timestamp: new Date().toISOString(), label: 'Request Growth Model' },
-       { from: 'agent-5', to: 'agent-6', type: 'call', timestamp: new Date().toISOString(), label: 'Initial Design Lead' },
-       { from: 'agent-6', to: 'agent-4', type: 'call', timestamp: new Date().toISOString(), label: 'Security Audit' },
-       { from: 'agent-4', to: 'agent-6', type: 'response', timestamp: new Date().toISOString(), label: 'Audit Result (Risk Found)' },
-       { from: 'agent-6', to: 'agent-4', type: 'call', timestamp: new Date().toISOString(), label: 'Verify Patch' },
-       { from: 'agent-4', to: 'agent-6', type: 'response', timestamp: new Date().toISOString(), label: 'Audit Result (Verified)' },
-       { from: 'agent-6', to: 'agent-5', type: 'response', timestamp: new Date().toISOString(), label: 'Design Confirmed' },
-       { from: 'agent-5', to: 'agent-9', type: 'call', timestamp: new Date().toISOString(), label: 'Deploy Staging' }
+      { from: 'agent-5', to: 'agent-7', type: 'call', timestamp: new Date().toISOString(), label: 'Request Matrix' },
+      { from: 'agent-5', to: 'agent-8', type: 'call', timestamp: new Date().toISOString(), label: 'Request Growth Model' },
+      { from: 'agent-5', to: 'agent-6', type: 'call', timestamp: new Date().toISOString(), label: 'Initial Design Lead' },
+      { from: 'agent-6', to: 'agent-4', type: 'call', timestamp: new Date().toISOString(), label: 'Security Audit' },
+      { from: 'agent-4', to: 'agent-6', type: 'response', timestamp: new Date().toISOString(), label: 'Audit Result (Risk Found)' },
+      { from: 'agent-6', to: 'agent-4', type: 'call', timestamp: new Date().toISOString(), label: 'Verify Patch' },
+      { from: 'agent-4', to: 'agent-6', type: 'response', timestamp: new Date().toISOString(), label: 'Audit Result (Verified)' },
+      { from: 'agent-6', to: 'agent-5', type: 'response', timestamp: new Date().toISOString(), label: 'Design Confirmed' },
+      { from: 'agent-5', to: 'agent-9', type: 'call', timestamp: new Date().toISOString(), label: 'Deploy Staging' }
     ]
   }
 ];
@@ -193,7 +194,7 @@ const MOCK_SESSIONS: Session[] = [
 export function useAgents() {
   const [agents, setAgents] = useState<Agent[]>(MOCK_AGENTS);
   const loading = false;
-  const fetchAgents = useCallback(async () => {}, []);
+  const fetchAgents = useCallback(async () => { }, []);
 
   const addAgent = useCallback(async (agentData: any) => {
     const newAgent: Agent = {
@@ -252,7 +253,7 @@ export function usePods() {
 export function useSessions(agentId?: string) {
   const [sessions] = useState<Session[]>(agentId ? MOCK_SESSIONS.filter(s => s.agentId === agentId) : MOCK_SESSIONS);
   const loading = false;
-  const fetchSessions = useCallback(async () => {}, []);
+  const fetchSessions = useCallback(async () => { }, []);
   return { sessions, loading, refresh: fetchSessions };
 }
 
@@ -265,7 +266,7 @@ export function usePodSessions(podId?: string) {
 export function useAllSessions() {
   const [sessions] = useState<Session[]>(MOCK_SESSIONS);
   const loading = false;
-  const fetchSessions = useCallback(async () => {}, []);
+  const fetchSessions = useCallback(async () => { }, []);
   return { sessions, loading, refresh: fetchSessions };
 }
 
@@ -281,7 +282,7 @@ export function useAgentFiles(_agentId?: string) {
     { name: 'src', type: 'directory', children: [{ name: 'main.ts', type: 'file' }] }
   ]);
   const loading = false;
-  const fetchFiles = useCallback(async () => {}, []);
+  const fetchFiles = useCallback(async () => { }, []);
   return { files, loading, refresh: fetchFiles };
 }
 
@@ -299,7 +300,7 @@ export function useTools() {
     { name: 'send_email', description: 'Email automation' }
   ]);
   const loading = false;
-  const fetchTools = useCallback(async () => {}, []);
+  const fetchTools = useCallback(async () => { }, []);
   return { tools, loading, refresh: fetchTools };
 }
 
@@ -379,7 +380,7 @@ const MOCK_CONNECTIONS: Connection[] = [
 export function useConnections() {
   const [connections, setConnections] = useState<Connection[]>(MOCK_CONNECTIONS);
   const loading = false;
-  const fetchConnections = useCallback(async () => {}, []);
+  const fetchConnections = useCallback(async () => { }, []);
   const saveConnection = useCallback(async (service: string, _creds: Record<string, string>): Promise<{ success: boolean; error?: string }> => {
     setConnections(prev => prev.map(c => c.service === service ? { ...c, isConnected: true } : c));
     return { success: true };
@@ -397,14 +398,14 @@ export function useTriggers() {
     { type: 'webhook', schema: { description: 'Trigger via HTTP POST request', fields: [{ name: 'path', label: 'Webhook Path', type: 'text', placeholder: '/my-webhook' }] } }
   ]);
   const loading = false;
-  const fetchSchemas = useCallback(async () => {}, []);
+  const fetchSchemas = useCallback(async () => { }, []);
   return { triggerSchemas, loading, refresh: fetchSchemas };
 }
 
 export function useModels() {
   const [models] = useState<string[]>(['openai:gpt-4o', 'openai:gpt-4o-mini', 'anthropic:claude-3-5-sonnet', 'google:gemini-1.5-pro']);
   const loading = false;
-  const fetchModels = useCallback(async () => {}, []);
+  const fetchModels = useCallback(async () => { }, []);
   return { models, loading, refresh: fetchModels };
 }
 
@@ -414,6 +415,6 @@ export function useTaskQueue() {
     { id: 'task-2', agentId: 'agent-1', status: 'processing', createdAt: new Date().toISOString() }
   ]);
   const loading = false;
-  const fetchQueue = useCallback(async () => {}, []);
+  const fetchQueue = useCallback(async () => { }, []);
   return { queue, loading, refresh: fetchQueue };
 }
