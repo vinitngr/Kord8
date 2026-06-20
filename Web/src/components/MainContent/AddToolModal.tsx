@@ -1,11 +1,11 @@
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Modal } from "../shared/Modal";
-import { Button } from "../shared/Button";
-import { Badge } from "../shared/Badge";
-import { useConnections } from "../../hooks/useStore";
 import { Logo } from "../shared/Logo";
-import type { Connection } from "../../types";
-import { AlertCircle, ArrowLeft, Check, Loader2, Plug } from "lucide-react";
+import { useConnections } from "../../hooks/useStore";
+import { Search, ChevronRight, Info } from "lucide-react";
+import { ConnectionForm } from "./ConnectionForm";
+import { Button } from "../shared/Button";
 
 interface AddToolModalProps {
   isOpen: boolean;
@@ -15,164 +15,148 @@ interface AddToolModalProps {
 export function AddToolModal({ isOpen, onClose }: AddToolModalProps) {
   const { connections, saveConnection } = useConnections();
   const [selectedService, setSelectedService] = useState<string | null>(null);
-  const [formData, setFormData] = useState<Record<string, string>>({});
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const disconnected = connections.filter(c => !c.isConnected);
-  const selectedConn = connections.find(c => c.service === selectedService);
-
-  const reset = () => {
-    setSelectedService(null);
-    setFormData({});
-    setError(null);
-    setSaving(false);
-  };
+  const currentService = connections.find(c => c.service === selectedService);
+  const disconnected = connections.filter(c => 
+    !c.isConnected && 
+    c.service !== 'core' && 
+    c.label.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleClose = () => {
-    reset();
+    setSelectedService(null);
     onClose();
-  };
-
-  const handleSave = async (conn: Connection) => {
-    setSaving(true);
-    setError(null);
-    const result = await saveConnection(conn.service, formData);
-    setSaving(false);
-
-    if (result.success) {
-      handleClose();
-    } else {
-      setError(result.error || "Connection failed.");
-    }
   };
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Connect New Tool"
-      className="max-w-lg"
+      dark={true}
+      noPadding={true}
+      title={selectedService ? `Connect ${currentService?.label}` : "Integrations Library"}
+      className="max-w-2xl border-[#18181B] bg-[#000] overflow-hidden"
     >
-      <div className="space-y-6 text-left p-1">
-
-        {/* ── Step 1: Service Picker ─────────────────────────────────── */}
-        {!selectedService && (
-          <>
-            <div className="space-y-1.5">
-              <h3 className="text-sm font-bold text-[#111]">Available Integrations</h3>
-              <p className="text-xs text-[#999]">Connect a tool to make it available for your agents.</p>
-            </div>
-
-            {disconnected.length === 0 ? (
-              <div className="text-center py-10">
-                <Check className="h-8 w-8 text-emerald-400 mx-auto mb-3" />
-                <p className="text-sm font-bold text-[#111]">All tools connected!</p>
-                <p className="text-xs text-[#999] mt-1">Every available integration is already set up.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                {disconnected.map((conn) => (
-                  <button
-                    key={conn.service}
-                    onClick={() => setSelectedService(conn.service)}
-                    className="p-4 bg-white border border-[#E5E5E5] rounded-xl flex items-start gap-3 hover:border-[#111] hover:shadow-sm transition-all group text-left"
-                  >
-                    <Logo service={conn.service} size="lg" className="group-hover:bg-[#111] transition-colors" />
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-[#111] truncate">{conn.label}</p>
-                      <p className="text-[10px] text-[#999] line-clamp-2 mt-0.5">{conn.description}</p>
-                      <p className="text-[9px] text-[#BBB] mt-1">
-                        {conn.tools.length} tool{conn.tools.length !== 1 ? "s" : ""}
-                      </p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-
-        {selectedService && selectedConn && (
-          <>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={reset}
-                className="h-8 w-8 rounded-lg bg-[#F5F5F5] hover:bg-[#EEE] flex items-center justify-center transition-colors"
-              >
-                <ArrowLeft className="h-3.5 w-3.5 text-[#666]" />
-              </button>
-              <div>
-                <h3 className="text-sm font-bold text-[#111]">Connect {selectedConn.label}</h3>
-                <p className="text-xs text-[#999]">{selectedConn.description}</p>
-              </div>
-            </div>
-
-            {selectedConn.tools.length > 1 && (
-              <div className="space-y-2">
-                <p className="text-[9px] font-bold text-[#999] uppercase tracking-wider">Tools Included</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {selectedConn.tools.map((t) => {
-                    const shortName = t.name.startsWith(selectedConn.service + "_") ? t.name.slice(selectedConn.service.length + 1) : t.name;
-                    return (
-                      <Badge key={t.name} variant="outline" className="text-[9px] py-0.5 capitalize">
-                        {shortName}
-                      </Badge>
-                    );
-                  })}
+      <div className="flex flex-col h-[500px]">
+        <AnimatePresence mode="wait">
+          {!selectedService ? (
+             <motion.div 
+               key="list"
+               initial={{ opacity: 0, y: 10 }} 
+               animate={{ opacity: 1, y: 0 }} 
+               exit={{ opacity: 0, y: -10 }} 
+               className="flex flex-col h-full overflow-hidden"
+             >
+                {/* Search Header */}
+                <div className="p-6 border-b border-[#18181B] bg-[#09090B]/50 shrink-0">
+                   <div className="relative">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#3F3F46]" />
+                      <input 
+                        className="w-full bg-[#000] border border-[#18181B] rounded-xl py-3 pl-11 pr-4 text-[13px] text-[#FAFAFA] placeholder:text-[#3F3F46] focus:outline-none focus:border-[#FF4A00]/40 transition-all font-bold tracking-tight"
+                        placeholder="Search for Notion, Slack, GitHub..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        autoFocus
+                      />
+                   </div>
                 </div>
-              </div>
-            )}
 
-            {/* Credential fields */}
-            <div className="space-y-3">
-              <p className="text-[9px] font-bold text-[#999] uppercase tracking-wider">Credentials</p>
-              {selectedConn.fields.map((field) => (
-                <div key={field.name} className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-[#666]">
-                    {field.label} {field.required && <span className="text-red-500">*</span>}
-                  </label>
-                  <input
-                    type={field.type === "password" ? "password" : "text"}
-                    className="w-full p-2.5 bg-[#FAFAFA] border border-[#E5E5E5] rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#111] focus:bg-white transition-colors"
-                    placeholder={field.placeholder}
-                    value={formData[field.name] || ""}
-                    onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
-                  />
+                {/* Grid Content */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+                   <div className="grid grid-cols-2 gap-3">
+                      {disconnected.map(conn => (
+                        <button 
+                           key={conn.service} 
+                           onClick={() => setSelectedService(conn.service)}
+                           className="flex items-center justify-between p-4 bg-[#09090B] border border-[#18181B] rounded-xl hover:border-[#27272A] hover:bg-[#121214] transition-all group text-left shadow-sm"
+                        >
+                           <div className="flex items-center gap-4 min-w-0">
+                              <div className="h-10 w-10 shrink-0 rounded-lg bg-[#000] border border-[#18181B] flex items-center justify-center transition-all group-hover:border-[#3F3F46]">
+                                <Logo service={conn.service} size="xs" />
+                              </div>
+                              <div className="flex flex-col min-w-0">
+                                 <p className="text-[14px] font-bold text-[#FAFAFA] truncate tracking-tight">{conn.label}</p>
+                                 <p className="text-[9px] text-[#3F3F46] font-bold uppercase tracking-widest truncate">Integration</p>
+                              </div>
+                           </div>
+                           <ChevronRight className="h-4 w-4 text-[#18181B] group-hover:text-[#3F3F46] transition-colors shrink-0" />
+                        </button>
+                      ))}
+                      {disconnected.length === 0 && (
+                        <div className="col-span-2 py-20 flex flex-col items-center justify-center text-center opacity-30">
+                           <Plug className="h-8 w-8 mb-4 text-[#3F3F46]" />
+                           <p className="text-[13px] font-bold text-[#FAFAFA]">No integrations found</p>
+                        </div>
+                      )}
+                   </div>
                 </div>
-              ))}
-            </div>
 
-            {/* Error */}
-            {error && (
-              <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
-                <AlertCircle className="h-3.5 w-3.5 text-red-500 flex-shrink-0 mt-0.5" />
-                <p className="text-[10px] text-red-600 font-medium">{error}</p>
-              </div>
-            )}
+                {/* Footer Info */}
+                <div className="p-5 border-t border-[#18181B] bg-[#09090B]/30 shrink-0 flex items-center gap-3">
+                   <div className="h-6 w-6 rounded-full bg-[#18181B] flex items-center justify-center">
+                      <Info className="h-3 w-3 text-[#3F3F46]" />
+                   </div>
+                   <p className="text-[11px] text-[#3F3F46] font-medium leading-tight">
+                      Manage existing connections in the standalone **Connectors** view.
+                   </p>
+                </div>
+             </motion.div>
+          ) : (
+             <motion.div 
+               key="form"
+               initial={{ opacity: 0, x: 20 }} 
+               animate={{ opacity: 1, x: 0 }} 
+               exit={{ opacity: 0, x: -20 }} 
+               className="flex flex-col h-full"
+             >
+                <div className="p-8 flex flex-col gap-8 flex-1 overflow-y-auto">
+                   <div className="flex items-center gap-5 p-5 bg-[#09090B] border border-[#18181B] rounded-2xl">
+                      <div className="h-14 w-14 bg-[#000] border border-[#18181B] rounded-xl flex items-center justify-center shadow-lg">
+                        <Logo service={selectedService} size="sm" />
+                      </div>
+                      <div className="flex-1">
+                         <h3 className="text-[16px] font-bold text-[#FAFAFA] tracking-tight">{currentService?.label}</h3>
+                         <p className="text-[12px] text-[#52525B] leading-relaxed font-medium mt-1">{currentService?.description}</p>
+                      </div>
+                   </div>
+                   
+                   <div className="space-y-6">
+                      <ConnectionForm connection={currentService!} onSuccess={handleClose} saveConnection={saveConnection} />
+                   </div>
+                </div>
 
-            {/* Actions */}
-            <div className="flex gap-3 pt-2">
-              <Button
-                variant="primary"
-                size="sm"
-                className="flex-1 h-10"
-                disabled={saving}
-                onClick={() => handleSave(selectedConn)}
-              >
-                {saving ? (
-                  <><Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> {selectedConn.hasPing ? "Verifying..." : "Saving..."}</>
-                ) : (
-                  <><Plug className="h-3.5 w-3.5 mr-2" /> {selectedConn.hasPing ? "Verify & Connect" : "Connect"}</>
-                )}
-              </Button>
-              <Button variant="outline" size="sm" className="h-10" onClick={handleClose}>
-                Cancel
-              </Button>
-            </div>
-          </>
-        )}
+                <div className="p-6 border-t border-[#18181B] bg-[#09090B]/50 shrink-0 flex items-center gap-3">
+                   <Button 
+                     onClick={() => setSelectedService(null)} 
+                     variant="outline"
+                     className="flex-1 border-[#18181B] text-[#A1A1AA] font-bold h-11"
+                   >
+                     Go Back
+                   </Button>
+                </div>
+             </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </Modal>
+  );
+}
+
+function Plug({ className }: { className?: string }) {
+  return (
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      width="24" height="24" 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+      className={className}
+    >
+      <path d="M12 2v8"/><path d="m16 4-1 1"/><path d="m17 9 1 1"/><path d="M7 10h10a2 2 0 0 1 2 2v1a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4v-1a2 2 0 0 1 2-2Z"/><path d="M9 20v2"/><path d="M15 20v2"/><path d="M10 16v4"/><path d="M14 16v4"/>
+    </svg>
   );
 }

@@ -57,9 +57,11 @@ html, body {
 @layer base {
   * {
     @apply border-border;
+    font-family: 'Space Grotesk', sans-serif;
   }
   body {
     @apply bg-background text-foreground antialiased h-screen overflow-hidden;
+    font-family: 'Space Grotesk', sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
   #root {
