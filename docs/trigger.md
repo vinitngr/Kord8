@@ -5,8 +5,8 @@ Built-in trigger types are registered by `TriggerPlugin`:
 - `manual`
 - `cron`
 - `webhook`
-- `scheduled`
-- `github`
+- `scheduled` (one-time date/time run)
+- `github` (GitHub-specific webhook trigger)
 
 ## Trigger config shape
 Each trigger entry in `agent.json` uses:
@@ -22,7 +22,8 @@ Each trigger entry in `agent.json` uses:
 ```
 
 ## Webhook trigger
-- Use `type: webhook` or `type: github`
+- Use `type: webhook` for generic POST payloads
+- Use `type: github` for GitHub event payloads + optional signature check
 - Send POST to: `POST /trigger/:agentId`
 - Payload is passed into the trigger and queued as a task
 

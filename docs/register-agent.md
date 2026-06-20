@@ -16,7 +16,7 @@ Common optional fields:
 - `temperature`, `maxTokens`, `maxIterations`
 - `enabled`
 - `triggers`
-- `reasoningEffort` (`low|medium|high`)
+- `reasoningEffort` (`low`, `medium`, or `high`)
 
 ## Register in code
 `engine.agents.register(config)` stores the validated agent and emits `registered`.
