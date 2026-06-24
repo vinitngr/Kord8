@@ -94,23 +94,26 @@ export function AssignTaskModal({ isOpen, onClose, agent }: AssignTaskModalProps
       onClose={handleClose}
       title={`Assign Task to ${agent?.name}`}
       className="max-w-md"
+      dark
       footer={
         status === 'success' ? null : (
-          <>
-            <Button variant="outline" onClick={handleClose} disabled={loading}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={loading || !message}>
+          <div className="flex gap-3 w-full">
+            <Button variant="ghost" onClick={handleClose} disabled={loading} className="flex-1 text-[#52525B] hover:text-[#FAFAFA] hover:bg-[#18181B]">Cancel</Button>
+            <Button onClick={handleSubmit} disabled={loading || !message} className="flex-[2] bg-[#FF4A00] hover:bg-[#E64300] text-white shadow-lg shadow-[#FF4A00]/10">
               {loading ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Sending...</> : "Send Task"}
             </Button>
-          </>
+          </div>
         )
       }
     >
       <div className="space-y-6">
         {status === 'success' ? (
           <div className="py-12 text-center animate-in zoom-in duration-300">
-            <CheckCircle2 className="h-12 w-12 text-emerald-500 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-[#111]">Task Assigned!</h3>
-            <p className="text-sm text-[#999] mt-1">
+            <div className="h-16 w-16 bg-[#10B981]/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-[#10B981]/20">
+              <CheckCircle2 className="h-8 w-8 text-[#10B981]" />
+            </div>
+            <h3 className="text-lg font-bold text-[#FAFAFA]">Task Assigned!</h3>
+            <p className="text-sm text-[#52525B] mt-2">
               {executionType === "immediate" 
                 ? "The agent has started working on your request." 
                 : `Task scheduled for ${new Date(scheduledTime).toLocaleString()}`}
@@ -119,42 +122,42 @@ export function AssignTaskModal({ isOpen, onClose, agent }: AssignTaskModalProps
         ) : (
           <>
             <div className="space-y-2">
-              <label className="text-[11px] font-bold text-[#999] uppercase tracking-wider">Message</label>
+              <label className="text-[11px] font-bold text-[#52525B] uppercase tracking-wider">Mission Message</label>
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 disabled={loading}
-                className="w-full h-32 p-3 bg-white border border-[#E5E5E5] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#111] placeholder:text-[#BBB] resize-none disabled:opacity-50"
+                className="w-full h-32 p-4 bg-[#000] border border-[#18181B] rounded-xl text-[14px] text-[#FAFAFA] focus:outline-none focus:border-[#FF4A00]/40 placeholder:text-[#27272A] resize-none disabled:opacity-50 transition-all font-medium"
                 placeholder="Describe the task you want the agent to perform..."
               />
             </div>
 
             <div className="space-y-3">
-              <label className="text-[11px] font-bold text-[#999] uppercase tracking-wider">Execution Timing</label>
-              <div className="flex gap-2">
+              <label className="text-[11px] font-bold text-[#52525B] uppercase tracking-wider">Execution Timing</label>
+              <div className="flex bg-[#000] p-1 rounded-xl border border-[#18181B]">
                 <button
                   disabled={loading}
                   onClick={() => setExecutionType("immediate")}
                   className={cn(
-                    "flex-1 p-2.5 text-xs font-medium rounded-lg border transition-all",
+                    "flex-1 py-2 text-[12px] font-bold rounded-lg transition-all",
                     executionType === "immediate" 
-                      ? "bg-[#111] text-white border-[#111]" 
-                      : "bg-white text-[#666] border-[#E5E5E5] hover:border-[#BBB]"
+                      ? "bg-[#18181B] text-[#FAFAFA] shadow-sm" 
+                      : "text-[#52525B] hover:text-[#A1A1AA]"
                   )}
                 >
-                  Run Immediately
+                  Run Now
                 </button>
                 <button
                   disabled={loading}
                   onClick={() => setExecutionType("scheduled")}
                   className={cn(
-                    "flex-1 p-2.5 text-xs font-medium rounded-lg border transition-all",
+                    "flex-1 py-2 text-[12px] font-bold rounded-lg transition-all",
                     executionType === "scheduled" 
-                      ? "bg-[#111] text-white border-[#111]" 
-                      : "bg-white text-[#666] border-[#E5E5E5] hover:border-[#BBB]"
+                      ? "bg-[#18181B] text-[#FAFAFA] shadow-sm" 
+                      : "text-[#52525B] hover:text-[#A1A1AA]"
                   )}
                 >
-                  Schedule for later
+                  Schedule
                 </button>
               </div>
 
@@ -165,24 +168,27 @@ export function AssignTaskModal({ isOpen, onClose, agent }: AssignTaskModalProps
                     value={scheduledTime}
                     disabled={loading}
                     onChange={(e) => setScheduledTime(e.target.value)}
-                    className="w-full p-2.5 bg-white border border-[#E5E5E5] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#111]"
+                    className="w-full p-3 bg-[#000] border border-[#18181B] rounded-xl text-sm text-[#FAFAFA] focus:outline-none focus:border-[#FF4A00]/40 accent-[#FF4A00]"
                   />
                 </div>
               )}
             </div>
 
             {errorMsg && (
-              <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-in fade-in">
+              <div className="flex items-start gap-3 p-4 bg-red-500/5 border border-red-500/20 rounded-xl animate-in fade-in">
                 <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-red-600 font-medium">{errorMsg}</p>
+                <p className="text-[12px] text-red-400 font-medium leading-relaxed">{errorMsg}</p>
               </div>
             )}
 
-            <p className="text-[10px] text-[#999] bg-[#FAFAFA] p-3 rounded-lg border border-[#F0F0F0]">
-              {executionType === "immediate" 
-                ? "The agent will spin up a new instance to process this request immediately."
-                : "The task will be queued and executed at the specified time."}
-            </p>
+            <div className="p-4 bg-[#09090B] rounded-xl border border-[#18181B] flex gap-3">
+              <div className="h-2 w-2 rounded-full bg-[#FF4A00]/20 animate-pulse mt-1.5 shrink-0" />
+              <p className="text-[11px] text-[#A1A1AA] leading-relaxed">
+                {executionType === "immediate" 
+                  ? "Standard Operation: The agent will initialize a runtime instance and begin processing immediately."
+                  : "Queued Operation: The mission parameters will be stored and triggered at the specific time signature."}
+              </p>
+            </div>
           </>
         )}
       </div>

@@ -14,12 +14,27 @@ export interface Agent {
   triggers: TriggerConfig[];
   colorClass?: string;
   enabled?: boolean;
-  // Model Configuration
+  provider?: string;
   model?: string;
   maxIterations?: number;
   maxTokens?: number;
   temperature?: number;
   reasoningEffort?: 'low' | 'medium' | 'high';
+}
+
+export type RoutingMode = 'swarm' | 'pipeline' | 'coordinated';
+
+export interface Pod {
+  id: string;
+  name: string;
+  goal: string;
+  agentIds: string[];
+  routingMode: RoutingMode;
+  maxRounds: number;
+  timeoutSeconds: number;
+  triggers: TriggerConfig[];
+  status: 'active' | 'idle';
+  strategy?: string;
 }
 
 export interface FileNode {
@@ -34,9 +49,18 @@ export interface TriggerConfig {
   id?: string;
 }
 
+export interface SessionEvent {
+  from: string;
+  to: string;
+  type: 'call' | 'response' | 'loop';
+  timestamp: string;
+  label?: string;
+}
+
 export interface Session {
   id: string;
-  agentId: string;
+  agentId?: string;
+  podId?: string;
   runCount: number;
   toolsUsed: string[];
   timestamp: string;
@@ -47,7 +71,7 @@ export interface Session {
   messages?: any[];
   usage?: any;
   steps?: number;
-  events?: any[];
+  events?: SessionEvent[];
   summary?: string;
   instruction?: string;
   endedAt?: string;
@@ -66,7 +90,8 @@ export interface KnowledgeBase {
   id: string;
   name: string;
   description: string;
-  type: 'connector' | 'upload' | 'notion' | 'website';
+  type: 'connector' | 'upload' | 'notion' | 'website' | 'google_drive' | 'github';
+  service?: string;
 }
 
 export interface TriggerSchema {
@@ -85,6 +110,7 @@ export interface ConnectionField {
 export interface ConnectionTool {
   name: string;
   description: string;
+  kind?: 'action' | 'read' | 'other';
 }
 
 export interface Connection {

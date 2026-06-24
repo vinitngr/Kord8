@@ -2,10 +2,9 @@ import { useState, useEffect } from "react";
 import { Modal } from "../shared/Modal";
 import { Badge } from "../shared/Badge";
 import type { Agent } from "../../types";
-import { useSessions, useAgentFiles, useSessionDetail, getFileContent, updateAgentConfig, saveFileContent, useTriggers, useModels } from "../../hooks/useStore";
+import { useAgentFiles, getFileContent, updateAgentConfig, saveFileContent, useTriggers, useModels, deleteAgent } from "../../hooks/useStore";
 import { ConnectionsPanel } from "./ConnectionsPanel";
 import { 
-  History,
   FileText,
   Settings,
   Folder,
@@ -17,7 +16,6 @@ import {
   Trash2, 
   X,
   Activity,
-  Send
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Button } from "../shared/Button";
@@ -30,18 +28,12 @@ interface AgentDetailsModalProps {
 }
 
 export function AgentDetailsModal({ isOpen, onClose, agent, onRefresh }: AgentDetailsModalProps) {
-  const [activeTab, setActiveTab] = useState<"details" | "files" | "sessions" | "settings">("details");
-  const { sessions, loading: sessionsLoading } = useSessions(activeTab === "sessions" ? agent?.id : undefined);
+  const [activeTab, setActiveTab] = useState<"details" | "files" | "settings">("details");
   const { files, loading: filesLoading } = useAgentFiles(activeTab === "files" ? agent?.id : undefined);
   
-  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
-  const { session: detailedSession, loading: detailLoading } = useSessionDetail(agent?.id, selectedSessionId || undefined);
-
   const [selectedFile, setSelectedFile] = useState<{name: string, path: string, content: string} | null>(null);
   const [expandedFolders, setExpandedFolders] = useState<string[]>([]);
-  const [followUpText, setFollowUpText] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [sessionTab, setSessionTab] = useState<"logs" | "raw">("logs");
   const [fileEditedContent, setFileEditedContent] = useState<string>("");
   const [isSubmittingFile, setIsSubmittingFile] = useState(false);
   const { triggerSchemas, loading: triggersLoading } = useTriggers();
@@ -114,14 +106,14 @@ export function AgentDetailsModal({ isOpen, onClose, agent, onRefresh }: AgentDe
       onClose={onClose}
       title={agent?.name || "Agent Details"}
       className="max-w-4xl"
+      dark
     >
       <div className="flex flex-col h-[700px] text-left">
         {/* Tabs */}
-        <div className="flex gap-8 border-b border-[#F0F0F0] mb-6">
+        <div className="flex gap-8 border-b border-[#18181B] mb-6">
           {[
             { id: "details", label: "Overview", icon: Activity },
             { id: "files", label: "Files", icon: FileText },
-            { id: "sessions", label: "Sessions", icon: History },
             { id: "settings", label: "Settings", icon: Settings },
           ].map(tab => (
             <button
@@ -129,12 +121,12 @@ export function AgentDetailsModal({ isOpen, onClose, agent, onRefresh }: AgentDe
               onClick={() => setActiveTab(tab.id as any)}
               className={cn(
                 "pb-3 text-sm font-semibold transition-colors relative flex items-center gap-2",
-                activeTab === tab.id ? "text-[#111]" : "text-[#999] hover:text-[#666]"
+                activeTab === tab.id ? "text-[#FAFAFA]" : "text-[#52525B] hover:text-[#A1A1AA]"
               )}
             >
               <tab.icon className="h-4 w-4" />
               {tab.label}
-              {activeTab === tab.id && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#111]" />}
+              {activeTab === tab.id && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FF4A00]" />}
             </button>
           ))}
         </div>
@@ -148,31 +140,31 @@ export function AgentDetailsModal({ isOpen, onClose, agent, onRefresh }: AgentDe
                 <Section title="Source Folder" content={agent?.uploadedFolder || "No folder uploaded"} isBadge />
                 
                 <div className="space-y-2">
-                  <h4 className="text-[10px] font-bold text-[#999] uppercase tracking-wider">Active Triggers</h4>
+                  <h4 className="text-[10px] font-bold text-[#52525B] uppercase tracking-wider">Active Triggers</h4>
                   <div className="space-y-2">
                     {agent?.triggers?.map((trigger, idx) => (
-                      <div key={`${trigger.type}-${idx}`} className="p-3 bg-[#FAFAFA] border border-[#F0F0F0] rounded-lg">
+                      <div key={`${trigger.type}-${idx}`} className="p-3 bg-[#000] border border-[#18181B] rounded-lg">
                         <div className="flex items-center justify-between mb-1">
-                          <p className="text-xs font-bold text-[#111] capitalize">{trigger.type}</p>
-                          <Badge variant="outline" className="text-[9px] py-0 px-1 font-mono">Trigger</Badge>
+                          <p className="text-xs font-bold text-[#FAFAFA] capitalize">{trigger.type}</p>
+                          <Badge variant="outline" className="text-[9px] py-0 px-1 font-mono border-[#27272A] text-[#A1A1AA]">Trigger</Badge>
                         </div>
                         {trigger.type === 'cron' && (
-                          <p className="text-[10px] text-[#666]">
-                            Runs: <span className="text-[#111] font-medium">{trigger.config?.expression}</span>
+                          <p className="text-[10px] text-[#52525B]">
+                            Runs: <span className="text-[#FAFAFA] font-medium">{trigger.config?.expression}</span>
                           </p>
                         )}
                         {trigger.type === 'scheduled' && (
-                          <p className="text-[10px] text-[#666]">
-                            Target: <span className="text-[#111] font-medium">{trigger.config?.date} {trigger.config?.time}</span>
+                          <p className="text-[10px] text-[#52525B]">
+                            Target: <span className="text-[#FAFAFA] font-medium">{trigger.config?.date} {trigger.config?.time}</span>
                           </p>
                         )}
                         {(trigger.type === 'webhook' || trigger.type === 'github') && (
-                          <p className="text-[10px] text-[#22C55E] font-mono truncate">
+                          <p className="text-[10px] text-[#FF4A00] font-mono truncate opacity-80">
                             /trigger/{agent.id}
                           </p>
                         )}
                         {trigger.config?.instruction && (
-                          <p className="text-[9px] text-[#999] mt-1 italic line-clamp-1">"{trigger.config.instruction}"</p>
+                          <p className="text-[9px] text-[#3F3F46] mt-1 italic line-clamp-1">"{trigger.config.instruction}"</p>
                         )}
                       </div>
                     ))}
@@ -207,23 +199,23 @@ export function AgentDetailsModal({ isOpen, onClose, agent, onRefresh }: AgentDe
                 </div>
 
                 <div className="space-y-3 pt-2">
-                  <h4 className="text-[10px] font-bold text-[#999] uppercase tracking-wider">Model Configuration</h4>
+                  <h4 className="text-[10px] font-bold text-[#52525B] uppercase tracking-wider">Model Configuration</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <p className="text-[10px] text-[#BBB] uppercase">Model</p>
-                      <p className="text-xs font-semibold text-[#111]">{agent?.model || 'GPT-4o'}</p>
+                      <p className="text-[10px] text-[#3F3F46] uppercase">Model</p>
+                      <p className="text-xs font-semibold text-[#FAFAFA]">{agent?.model || 'GPT-4o'}</p>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-[10px] text-[#BBB] uppercase">Temperature</p>
-                      <p className="text-xs font-semibold text-[#111]">{agent?.temperature || 0.7}</p>
+                      <p className="text-[10px] text-[#3F3F46] uppercase">Temperature</p>
+                      <p className="text-xs font-semibold text-[#FAFAFA]">{agent?.temperature || 0.7}</p>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-[10px] text-[#BBB] uppercase">Max Iterations</p>
-                      <p className="text-xs font-semibold text-[#111]">{agent?.maxIterations || 10}</p>
+                      <p className="text-[10px] text-[#3F3F46] uppercase">Max Iterations</p>
+                      <p className="text-xs font-semibold text-[#FAFAFA]">{agent?.maxIterations || 10}</p>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-[10px] text-[#BBB] uppercase">Tokens</p>
-                      <p className="text-xs font-semibold text-[#111]">{agent?.maxTokens || 4096}</p>
+                      <p className="text-[10px] text-[#3F3F46] uppercase">Tokens</p>
+                      <p className="text-xs font-semibold text-[#FAFAFA]">{agent?.maxTokens || 4096}</p>
                     </div>
                   </div>
                 </div>
@@ -232,8 +224,8 @@ export function AgentDetailsModal({ isOpen, onClose, agent, onRefresh }: AgentDe
               {/* Right Column: Instruction & Metadata */}
               <div className="md:col-span-2 space-y-6">
                 <div className="space-y-4">
-                  <h4 className="text-[10px] font-bold text-[#999] uppercase tracking-wider">Instruction</h4>
-                  <div className="bg-[#111] border border-[#333] rounded-xl p-6 font-mono text-[12px] text-[#D1D5DB] leading-relaxed shadow-inner max-h-96 overflow-y-auto font-medium">
+                  <h4 className="text-[10px] font-bold text-[#52525B] uppercase tracking-wider">Instruction</h4>
+                  <div className="bg-[#000] border border-[#18181B] rounded-xl p-6 font-mono text-[12px] text-[#A1A1AA] leading-relaxed shadow-inner max-h-96 overflow-y-auto font-medium">
                     {agent?.instruction}
                   </div>
                 </div>
@@ -242,15 +234,15 @@ export function AgentDetailsModal({ isOpen, onClose, agent, onRefresh }: AgentDe
           </div>
         ) : activeTab === "files" ? (
           <div className="flex-1 flex gap-6 overflow-hidden">
-            <div className="flex-1 flex border border-[#F0F0F0] rounded-2xl overflow-hidden bg-white">
+            <div className="flex-1 flex border border-[#18181B] rounded-2xl overflow-hidden bg-[#000]">
               {/* File Explorer */}
-              <div className="w-1/3 border-r border-[#F0F0F0] flex flex-col overflow-hidden">
-                <div className="bg-[#FAFAFA] border-b border-[#E5E5E5] px-4 py-3 flex items-center justify-between">
+              <div className="w-1/3 border-r border-[#18181B] flex flex-col overflow-hidden">
+                <div className="bg-[#09090B] border-b border-[#18181B] px-4 py-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Folder className="h-4 w-4 text-[#666]" />
-                    <span className="text-sm font-semibold">Source Files</span>
+                    <Folder className="h-4 w-4 text-[#52525B]" />
+                    <span className="text-sm font-semibold text-[#FAFAFA]">Source Files</span>
                   </div>
-                  {filesLoading && <div className="text-[10px] text-[#999] animate-pulse">Loading...</div>}
+                  {filesLoading && <div className="text-[10px] text-[#3F3F46] animate-pulse">Loading...</div>}
                 </div>
                 <div className="flex-1 overflow-y-auto p-3">
                   <FileTree 
@@ -263,13 +255,13 @@ export function AgentDetailsModal({ isOpen, onClose, agent, onRefresh }: AgentDe
               </div>
 
               {/* File Content */}
-              <div className="flex-1 flex flex-col overflow-hidden bg-[#fafafa]">
+              <div className="flex-1 flex flex-col overflow-hidden bg-[#09090B]">
                 {selectedFile ? (
                   <>
-                    <div className="bg-white border-b border-[#E5E5E5] px-4 py-3 flex items-center justify-between">
+                    <div className="bg-[#000] border-b border-[#18181B] px-4 py-3 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-[#111]" />
-                        <span className="text-sm font-bold text-[#111]">{selectedFile.name}</span>
+                        <FileText className="h-4 w-4 text-[#FAFAFA]" />
+                        <span className="text-sm font-bold text-[#FAFAFA]">{selectedFile.name}</span>
                         {fileEditedContent !== selectedFile.content && (
                           <Badge variant="outline" className="text-[9px] py-0 border-amber-200 text-amber-600 bg-amber-50">Unsaved Changes</Badge>
                         )}
@@ -303,7 +295,7 @@ export function AgentDetailsModal({ isOpen, onClose, agent, onRefresh }: AgentDe
                     </div>
                     <div className="flex-1 overflow-hidden relative">
                       <textarea
-                        className="w-full h-full p-6 font-mono text-[12px] text-[#444] bg-transparent outline-none resize-none leading-relaxed"
+                        className="w-full h-full p-6 font-mono text-[12px] text-[#A1A1AA] bg-transparent outline-none resize-none leading-relaxed"
                         value={fileEditedContent}
                         onChange={(e) => setFileEditedContent(e.target.value)}
                         placeholder="File is empty"
@@ -320,198 +312,21 @@ export function AgentDetailsModal({ isOpen, onClose, agent, onRefresh }: AgentDe
               </div>
             </div>
           </div>
-        ) : activeTab === "sessions" ? (
-          <div className="flex gap-6 pr-2">
-            {/* Session List - Compact & Fixed Width */}
-            <div className="w-64 shrink-0 border-r border-[#F0F0F0] pr-6 space-y-1.5">
-              {sessionsLoading && <div className="p-4 text-center text-[10px] text-[#999] uppercase font-bold tracking-widest">Loading...</div>}
-              {sessions.length === 0 && !sessionsLoading && <div className="p-4 text-center text-[10px] text-[#999] uppercase font-bold tracking-widest">No runs</div>}
-              {sessions.map((session, index) => (
-                <button
-                  key={session.id}
-                  onClick={() => setSelectedSessionId(session.id)}
-                  className={cn(
-                    "w-full text-left px-2 py-1.5 rounded-md border transition-all",
-                    selectedSessionId === session.id 
-                      ? "border-[#111] bg-white shadow-sm" 
-                      : "border-transparent hover:bg-[#FAFAFA]"
-                  )}
-                >
-                  <div className="flex justify-between items-center mb-0.5">
-                    <p className="text-[9px] font-bold text-[#111]">Run #{sessions.length - index}</p>
-                    {session.status === 'failed' && (
-                      <div className="h-1 w-1 bg-red-500 rounded-full" />
-                    )}
-                  </div>
-                  <p className="text-[8px] font-mono text-[#CCC] truncate">{session.id}</p>
-                </button>
-              ))}
-            </div>
-
-            {/* Session Details - Single Scroll Flow */}
-            <div className="flex-1 pb-10">
-              {detailLoading ? (
-                <div className="py-20 text-center text-[#999] animate-pulse text-[10px] font-bold uppercase tracking-widest">Fetching...</div>
-              ) : detailedSession ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-[11px] font-bold uppercase tracking-widest text-[#111]">Audit Stream</h4>
-                      <p className="text-[9px] font-mono text-[#BBB]">{detailedSession.id}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                       <div className="flex bg-[#F5F5F5] p-0.5 rounded-lg border border-[#EEE]">
-                        <button 
-                          onClick={() => setSessionTab("logs")}
-                          className={cn(
-                            "px-3 py-1 text-[9px] font-bold rounded-md transition-all",
-                            sessionTab === "logs" ? "bg-white text-[#111] shadow-sm" : "text-[#888]"
-                          )}
-                        >
-                          Logs
-                        </button>
-                        <button 
-                          onClick={() => setSessionTab("raw")}
-                          className={cn(
-                            "px-3 py-1 text-[9px] font-bold rounded-md transition-all",
-                            sessionTab === "raw" ? "bg-white text-[#111] shadow-sm" : "text-[#888]"
-                          )}
-                        >
-                          JSON
-                        </button>
-                      </div>
-                      <Badge variant={detailedSession.status === 'failed' ? "error" : "success"} className="h-5 px-2 text-[8px]">
-                        {detailedSession.status === 'completed' ? 'Completed' : detailedSession.status === 'failed' ? 'Failed' : 'Running'}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  {sessionTab === "logs" ? (
-                    <div className="space-y-4 animate-in fade-in duration-200">
-                      {/* Task Instruction - Integrated */}
-                      {detailedSession.instruction && (
-                        <div className="bg-[#FAFAFA] border border-[#EEE] rounded-xl p-3">
-                           <p className="text-[9px] font-bold text-[#999] uppercase tracking-widest mb-1">Instruction</p>
-                           <p className="text-[11px] font-medium text-[#444] leading-relaxed italic">
-                             "{detailedSession.instruction}"
-                           </p>
-                        </div>
-                      )}
-
-                      {/* Compact Audit Events */}
-                      <div className="space-y-1.5">
-                        <div className="bg-white rounded-xl border border-[#EEE] p-3 font-mono text-[11px] space-y-2">
-                          {detailedSession.events && detailedSession.events.length > 0 ? detailedSession.events.map((ev: any, i: number) => {
-                            const isTool = ev.type.includes('tool');
-                            const isError = ev.type === 'error' || ev.type.toUpperCase() === 'ERROR';
-
-                            return (
-                              <div key={i} className="flex gap-3 py-1 border-b border-[#FAFAFA] last:border-0 border-transparent">
-                                <span className="shrink-0 w-12 text-[9px] text-[#BBB] tabular-nums pt-0.5">
-                                  {new Date(ev.timestamp).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                                <div className="flex-1 flex gap-2 overflow-hidden">
-                                  <span className={cn(
-                                    "shrink-0 w-20 text-[9px] font-bold uppercase truncate pt-0.5",
-                                    isError ? "text-red-500" : isTool ? "text-blue-500" : "text-[#999]"
-                                  )}>
-                                    {ev.type}
-                                  </span>
-                                  <div className="flex-1">
-                                    <p className={cn(
-                                      "text-[11px] font-medium leading-relaxed",
-                                      isError ? "text-red-600 font-bold" : "text-[#444]"
-                                    )}>
-                                      {ev.message}
-                                    </p>
-                                    {ev.data && (
-                                      <div className="mt-1 p-2 bg-[#FAFAFA] border border-[#EEE] rounded-lg text-[10px] text-[#666] overflow-x-auto">
-                                        {typeof ev.data === 'object' ? JSON.stringify(ev.data) : String(ev.data)}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          }) : (
-                            <div className="py-10 text-center text-[#BBB] font-sans text-xs">
-                              No history recorded
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Final Result - Integrated */}
-                      {detailedSession.result && (
-                        <div className="p-4 bg-[#FAFAFA] border border-[#EEE] rounded-xl">
-                          <p className="text-[9px] font-bold text-[#999] uppercase tracking-widest mb-2">Outcome</p>
-                          <div className="text-[12px] font-bold text-[#111] leading-relaxed whitespace-pre-wrap">
-                            {typeof detailedSession.result === 'object' ? JSON.stringify(detailedSession.result, null, 2) : detailedSession.result}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="bg-white border border-[#EEE] rounded-xl overflow-hidden animate-in zoom-in-95 duration-200">
-                      <div className="p-4 font-mono text-[11px] leading-relaxed text-[#555]">
-                        <pre className="whitespace-pre-wrap select-text">
-                          {JSON.stringify(detailedSession, null, 2)}
-                        </pre>
-                      </div>
-                    </div>
-                  )}
-
-                  {detailedSession.usage && (
-                    <div className="flex items-center gap-4 text-[9px] font-bold text-[#BBB] uppercase tracking-widest pt-2">
-                       <span>Tokens: {detailedSession.usage.totalTokens}</span>
-                       <div className="h-1 w-1 bg-[#EEE] rounded-full" />
-                       <span>Steps: {detailedSession.steps || 0}</span>
-                    </div>
-                  )}
-
-                  <div className="pt-6 border-t border-[#F0F0F0] space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-[#999] uppercase">Ask a follow up</label>
-                      <div className="relative">
-                        <textarea 
-                          className="w-full h-20 p-3 bg-[#FAFAFA] border border-[#E5E5E5] rounded-xl text-xs focus:outline-none"
-                          placeholder="Ask about this run..."
-                          value={followUpText}
-                          onChange={(e) => setFollowUpText(e.target.value)}
-                        />
-                        <button 
-                          className="absolute right-2 bottom-2 p-1.5 bg-[#111] text-white rounded-lg hover:bg-black transition-all"
-                          onClick={() => alert(`Sending follow-up: ${followUpText}`)}
-                        >
-                          <Send className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-20 opacity-20 gap-3">
-                  <Activity className="h-8 w-8" />
-                  <p className="text-[10px] font-bold uppercase tracking-widest">Select a run</p>
-                </div>
-              )}
-            </div>
-          </div>
         ) : (
           <div className="space-y-8 pr-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-6">
                 <h3 className="text-sm font-bold text-[#111]">Management Actions</h3>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-4 bg-[#FAFAFA] border border-[#F0F0F0] rounded-xl">
+                  <div className="flex items-center justify-between p-4 bg-[#09090B] border border-[#18181B] rounded-xl">
                     <div>
-                      <p className="text-sm font-semibold">Active State</p>
-                      <p className="text-[11px] text-[#999]">{agent?.enabled ? 'Running normally' : 'Currently paused'}</p>
+                      <p className="text-sm font-semibold text-[#FAFAFA]">Active State</p>
+                      <p className="text-[11px] text-[#52525B]">{agent?.enabled ? 'Running normally' : 'Currently paused'}</p>
                     </div>
                     <Button 
                       variant={agent?.enabled ? "outline" : "primary"} 
                       size="sm" 
-                      className="gap-2"
+                      className={cn("gap-2 border-[#27272A]", agent?.enabled ? "text-[#A1A1AA]" : "bg-[#FF4A00] text-white")}
                       onClick={async () => {
                         await updateAgentConfig(agent!.id, { ...agent!, enabled: !agent?.enabled });
                         onRefresh?.();
@@ -522,22 +337,19 @@ export function AgentDetailsModal({ isOpen, onClose, agent, onRefresh }: AgentDe
                     </Button>
                   </div>
 
-                  <div className="flex items-center justify-between p-4 bg-red-50/50 border border-red-100 rounded-xl">
+                  <div className="flex items-center justify-between p-4 bg-[#EF4444]/5 border border-[#EF4444]/10 rounded-xl">
                     <div>
-                      <p className="text-sm font-semibold text-red-600">Delete Agent</p>
-                      <p className="text-[11px] text-red-400">Permanently remove this agent and its data</p>
+                      <p className="text-sm font-semibold text-[#EF4444]">Delete Agent</p>
+                      <p className="text-[11px] text-[#7F1D1D]/70">Permanently remove this agent and its data</p>
                     </div>
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="text-red-600 border-red-200 hover:bg-red-50 gap-2"
+                      className="text-[#EF4444] border-[#EF4444]/20 hover:bg-[#EF4444]/10 gap-2 transition-all"
                       onClick={async () => {
                         if (confirm(`Are you sure you want to delete ${agent?.name}? This cannot be undone.`)) {
-                          const res = await fetch(`http://localhost:4000/agents/${agent?.id}`, { method: 'DELETE' });
-                          if (res.ok) {
-                            onClose();
-                            window.location.reload();
-                          }
+                          await deleteAgent(agent!.id);
+                          onClose();
                         }
                       }}
                     >
@@ -614,7 +426,7 @@ export function AgentDetailsModal({ isOpen, onClose, agent, onRefresh }: AgentDe
                                     <span className="text-[8px] font-bold text-white/50 uppercase tracking-widest">Target Endpoint</span>
                                     <button 
                                       onClick={() => {
-                                        const url = `http://localhost:4000/trigger/${agent.id}`;
+                                        const url = `https://api.agentteam.com/v1/trigger/${agent.id}`;
                                         navigator.clipboard.writeText(url);
                                         alert("Copied to clipboard!");
                                       }}
@@ -624,7 +436,7 @@ export function AgentDetailsModal({ isOpen, onClose, agent, onRefresh }: AgentDe
                                     </button>
                                   </div>
                                   <code className="block text-[9px] text-[#00FF00] font-mono break-all">
-                                    http://localhost:4000/trigger/{agent.id}
+                                    https://api.agentteam.com/v1/trigger/{agent.id}
                                   </code>
                                 </div>
                               )}
@@ -815,17 +627,17 @@ function Section({ title, content, isCode, isBadge }: { title: string, content?:
   
   return (
     <div className="space-y-1.5">
-      <h4 className="text-[10px] font-bold text-[#999] uppercase tracking-wider">{title}</h4>
+      <h4 className="text-[10px] font-bold text-[#52525B] uppercase tracking-wider">{title}</h4>
       {isCode ? (
-        <div className="bg-[#FAFAFA] border border-[#E5E5E5] rounded-lg p-3 font-mono text-[11px] text-[#666] whitespace-pre-wrap leading-tight">
+        <div className="bg-[#000] border border-[#18181B] rounded-lg p-3 font-mono text-[11px] text-[#A1A1AA] whitespace-pre-wrap leading-tight">
           {displayContent}
         </div>
       ) : isBadge ? (
-        <Badge variant="outline" className="bg-[#F9F9FB] border-[#E5E5E5] font-mono text-[10px] py-1 text-[#111] font-semibold">
+        <Badge variant="outline" className="bg-[#18181B] border-[#27272A] font-mono text-[10px] py-1 text-[#FAFAFA] font-semibold">
           {displayContent}
         </Badge>
       ) : (
-        <p className="text-sm font-medium text-[#111] leading-relaxed">{displayContent}</p>
+        <p className="text-sm font-medium text-[#FAFAFA] leading-relaxed">{displayContent}</p>
       )}
     </div>
   );
@@ -851,22 +663,22 @@ function FileTree({ nodes, expandedFolders, onToggle, onFileClick, depth = 0, pa
             <div 
               className={cn(
                 "flex items-center gap-2 p-1.5 rounded-md transition-colors cursor-pointer",
-                node.type === 'directory' ? "hover:bg-gray-100" : "hover:bg-gray-50 bg-[#FAFAFA]/30"
+                node.type === 'directory' ? "hover:bg-[#18181B]" : "hover:bg-[#18181B]/50 bg-[#000]/10"
               )}
               style={{ paddingLeft: `${depth * 16}px` }}
               onClick={() => node.type === 'directory' ? onToggle(currentPath) : onFileClick(node.name, currentPath)}
             >
               {node.type === 'directory' ? (
                 <>
-                  {isExpanded ? <ChevronDown className="h-3 w-3 text-[#999]" /> : <ChevronRight className="h-3 w-3 text-[#999]" />}
-                  <Folder className="h-3.5 w-3.5 text-blue-500 fill-blue-500/10" />
+                  {isExpanded ? <ChevronDown className="h-3 w-3 text-[#52525B]" /> : <ChevronRight className="h-3 w-3 text-[#52525B]" />}
+                  <Folder className="h-3.5 w-3.5 text-[#FF4A00] fill-[#FF4A00]/10" />
                 </>
               ) : (
-                <File className="h-3.5 w-3.5 text-[#AAA] ml-5" />
+                <File className="h-3.5 w-3.5 text-[#3F3F46] ml-5" />
               )}
               <span className={cn(
                 "text-[12px]",
-                node.type === 'directory' ? "font-semibold text-[#111]" : "text-[#666]"
+                node.type === 'directory' ? "font-semibold text-[#FAFAFA]" : "text-[#A1A1AA]"
               )}>
                 {node.name}
               </span>
